@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>点滴成就 - 人生成就钉钉</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 引入高颜值字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&family=Playfair+Display:ital,wght@0,700;1,400&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --primary: #1a1a1a;
+            --accent: #FFD700;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary);
+            padding-bottom: 100px;
+        }
+
+        /* --- 页面头部 --- */
+        header {
+            padding: 30px 20px 10px;
+            text-align: center;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+        }
+        h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+        .subtitle { font-size: 10px; color: #999; margin-top: 5px; letter-spacing: 2px; text-transform: uppercase; }
+
+        /* --- 输入区域 --- */
+        .input-section {
+            padding: 20px;
+            background: #fff;
+            margin-bottom: 15px;
+        }
+        .input-wrapper {
+            position: relative;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            background: #fafafa;
+            transition: 0.3s;
+        }
+        .input-wrapper:focus-within { border-color: #333; background: #fff; box-shadow: var(--shadow); }
+        
+        textarea {
+            width: 100%; height: 80px; border: none; outline: none;
+            font-size: 16px; resize: none; background: transparent; font-family: inherit;
+        }
+
+        /* 图片上传预览条 */
+        .upload-bar {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .img-preview {
+            width: 40px; height: 40px; border-radius: 6px;
+            object-fit: cover; background: #eee; display: none;
+        }
+        .upload-btn {
+            font-size: 12px; color: #666; display: flex; align-items: center; gap: 5px;
+            padding: 5px 10px; background: #f0f0f0; border-radius: 20px; cursor: pointer;
+        }
+        #file-input { display: none; }
+
+        .btn-generate {
+            width: 100%; background: #000; color: #fff; border: none;
+            padding: 14px; border-radius: 30px; font-size: 16px; margin-top: 15px;
+            font-weight: bold; letter-spacing: 1px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        .btn-generate:active { transform: scale(0.98); }
+
+        /* --- 成就墙 --- */
+        .wall-container { padding: 0 15px; }
+        .wall-title { font-size: 12px; color: #999; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .clear-btn { color: #ff4d4f; cursor: pointer; }
+
+        .nail-item {
+            background: #fff; padding: 20px; margin-bottom: 12px; border-radius: 16px;
+            box-shadow: var(--shadow); position: relative;
+            cursor: pointer;
+            animation: slideIn 0.4s ease-out;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .nail-tag { font-size: 10px; color: #fff; background: #333; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+        .nail-text { font-size: 15px; line-height: 1.6; color: #333; font-weight: 500; }
+        .nail-img { width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; }
+        .nail-date { font-size: 11px; color: #aaa; margin-top: 12px; text-align: right; display: block;}
+        
+        /* 删除按钮优化 */
+        .del-btn { 
+            position: absolute; top: 10px; right: 10px; 
+            width: 32px; height: 32px; 
+            background: rgba(255,255,255,0.9); 
+            border-radius: 50%; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: #999; font-size: 20px; 
+            line-height: 32px; text-align: center;
+            cursor: pointer; z-index: 100;
+            transition: all 0.2s;
+        }
+        .del-btn:active { color: #ff4d4f; transform: scale(0.9); background: #fff; }
+
+        /* --- 海报模态框 --- */
+        #modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000;
+            display: none; flex-direction: column; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            width: 100%; height: 100%; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        /* 海报画布 */
+        #poster-canvas {
+            width: 300px; 
+            min-height: 480px;
+            background: #fff;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            margin: 0 auto 25px auto;
+            transition: all 0.3s ease;
+        }
+
+        /* --- 底部控制 --- */
+        .controls { 
+            width: 320px; 
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1); 
+            padding: 15px; 
+            border-radius: 16px; 
+            backdrop-filter: blur(10px); 
+        }
+        
+        .style-switcher { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; -webkit-overflow-scrolling: touch; }
+        .style-switcher::-webkit-scrollbar { display: none; }
+        
+        .style-btn {
+            flex: 0 0 auto; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; font-size: 11px; cursor: pointer; text-align: center; white-space: nowrap;
+        }
+        .style-btn.active { background: #fff; color: #000; font-weight: bold; border-color: #fff; }
+        
+        .action-row { display: flex; gap: 10px; }
+        .btn-cancel { flex: 1; padding: 12px; border: none; background: rgba(255,255,255,0.2); color: #fff; border-radius: 8px; cursor: pointer; }
+        .btn-save { flex: 2; background: #fff; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* --- 风格 1: 赛博朋克 --- */
+        .style-cyber {
+            background: #050505; color: #0ff; padding: 0;
+            font-family: 'Noto Sans SC', sans-serif; border: 1px solid #333;
+        }
+        .style-cyber::before {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(90deg, transparent 95%, #0ff 95%), linear-gradient(0deg, transparent 95%, #f0f 95%);
+            background-size: 20px 20px; opacity: 0.1; z-index: 0;
+        }
+        .style-cyber .p-inner { position: relative; z-index: 1; padding: 30px; height: 100%; display: flex; flex-direction: column; }
+        .style-cyber .p-head { border-bottom: 2px solid #0ff; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; font-family: monospace; }
+        .style-cyber .p-meme { color: #f0f; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border: 1px solid #f0f; display: inline-block; padding: 2px 5px;}
+        .style-cyber .p-text { font-size: 18px; line-height: 1.5; font-weight: bold; flex: 1; text-shadow: 0 0 5px rgba(0,255,255,0.5); }
+        .style-cyber .p-img-box { width: 100%; height: 180px; overflow: hidden; border: 1px solid #333; margin: 15px 0; position: relative; }
+        .style-cyber .p-img-box img { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.2) hue-rotate(10deg); }
+        .style-cyber .p-footer { font-family: monospace; font-size: 10px; opacity: 0.7; display: flex; justify-content: space-between; }
+        
+        /* --- 风格 2: 复古报纸 --- */
+        .style-retro {
+            background: #f4ecd8; color: #2c2c2c;
+            font-family: 'Noto Serif SC', serif; padding: 40px 30px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+        }
+        .style-retro::after {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 2px solid #2c2c2c; pointer-events: none;
+        }
+        .style-retro .p-title { text-align: center; border-bottom: 2px double #2c2c2c; padding-bottom: 10px; margin-bottom: 20px; }
+        .style-retro .p-title h2 { font-size: 24px; margin-bottom: 5px; }
+        .style-retro .p-title span { font-family: 'Times New Roman', serif; font-style: italic; font-size: 10px; }
+        .style-retro .p-meme { font-weight: bold; font-size: 14px; margin-bottom: 15px; background: #2c2c2c; color: #f4ecd8; display: inline-block; padding: 2px 6px; }
+        .style-retro .p-text { font-size: 16px; line-height: 1.8; text-align: justify; columns: 1; }
+        .style-retro .p-img-box { width: 100%; height: 160px; filter: sepia(0.8) contrast(1.1); margin: 15px 0; border: 1px solid #999; overflow: hidden; }
+        .style-retro .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-retro .p-footer { border-top: 1px solid #999; padding-top: 10px; display: flex; justify-content: space-between; font-size: 10px; font-family: monospace; }
+
+        /* --- 风格 3: 潮流杂志 --- */
+        .style-mag {
+            background: #fff; color: #000; padding: 0;
+            font-family: 'Noto Sans SC', sans-serif; position: relative;
+        }
+        .style-mag .p-bg-text {
+            position: absolute; bottom: -20px; right: -10px; font-size: 100px; font-weight: 900;
+            color: #f0f0f0; z-index: 0; line-height: 0.8; word-break: break-all;
+        }
+        .style-mag .p-inner { position: relative; z-index: 1; padding: 40px; height: 100%; display: flex; flex-direction: column; }
+        .style-mag .p-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+        .style-mag .p-big-num { font-size: 48px; font-weight: 900; line-height: 1; }
+        .style-mag .p-label { font-weight: bold; font-size: 12px; letter-spacing: 2px; }
+        .style-mag .p-meme { font-family: 'Times New Roman', serif; font-style: italic; font-size: 14px; color: #666; margin-bottom: 20px; }
+        .style-mag .p-text { font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 20px; }
+        .style-mag .p-img-box { width: 100%; height: 200px; overflow: hidden; margin-bottom: 20px; }
+        .style-mag .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-mag .p-bar { height: 10px; background: #000; width: 100%; margin-top: auto; }
+
+        /* --- 风格 4: 禅意极简 --- */
+        .style-zen {
+            background: #e6e6e6; color: #444;
+            font-family: 'Ma Shan Zheng', cursive; padding: 60px 40px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            background-image: radial-gradient(#dcdcdc 1px, transparent 1px); background-size: 20px 20px;
+        }
+        .style-zen .p-circle {
+            width: 80px; height: 80px; border: 2px solid #ff6b6b; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 30px;
+            font-size: 24px; color: #ff6b6b;
+        }
+        .style-zen .p-meme { font-family: 'Noto Sans SC', sans-serif; font-size: 12px; color: #888; letter-spacing: 4px; margin-bottom: 20px; text-transform: uppercase;}
+        .style-zen .p-text { font-size: 28px; line-height: 1.6; margin-bottom: 40px; border-left: 1px solid #ff6b6b; padding-left: 20px; align-self: flex-start; }
+        .style-zen .p-img-box { width: 100%; height: 180px; border-radius: 4px; overflow: hidden; margin-bottom: 30px; filter: grayscale(1); }
+        .style-zen .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-zen .p-footer { font-size: 12px; color: #aaa; width: 100%; text-align: right; border-top: 1px solid #ddd; padding-top: 15px; }
+
+        /* --- 风格 5: 金碧辉煌 --- */
+        .style-luxury {
+            background: #111; color: #d4af37; font-family: 'Playfair Display', serif; padding: 50px 40px; text-align: center;
+            border: 4px solid #d4af37; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        .style-luxury::before { content: '✦'; font-size: 40px; color: #d4af37; opacity: 0.5; margin-bottom: 20px; display: block; }
+        .style-luxury .p-meme { font-family: 'Noto Sans SC', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; color: #fff; }
+        .style-luxury .p-text { font-size: 24px; line-height: 1.4; margin-bottom: 30px; font-style: italic; border-bottom: 1px solid #333; padding-bottom: 20px; display: inline-block; }
+        .style-luxury .p-img-box { width: 100%; height: 160px; object-fit: cover; margin: 20px 0; border-radius: 50%; border: 2px solid #d4af37; padding: 5px; }
+        .style-luxury .p-img-box img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .style-luxury .p-footer { font-size: 10px; color: #888; margin-top: 30px; font-family: 'Noto Sans SC', sans-serif; }
+
+        /* --- 风格 6: 清新渐变 --- */
+        .style-fresh {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #555;
+            font-family: 'Noto Sans SC', sans-serif; padding: 40px;
+        }
+        .style-fresh .p-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: 100%; display: flex; flex-direction: column; }
+        .style-fresh .p-meme { font-size: 12px; color: #888; margin-bottom: 20px; font-weight: bold; }
+        .style-fresh .p-text { font-size: 20px; font-weight: 700; color: #333; line-height: 1.5; margin-bottom: 20px; }
+        .style-fresh .p-img-box { width: 100%; height: 180px; object-fit: cover; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .style-fresh .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-fresh .p-footer { margin-top: auto; text-align: center; font-size: 10px; color: #999; }
+
+        /* --- 风格 7: 蒸汽波 --- */
+        .style-vapor {
+            background: #2b0f54; color: #fff; font-family: 'Noto Sans SC', sans-serif; padding: 40px 30px;
+            background-image: linear-gradient(0deg, rgba(43,15,84,1) 0%, rgba(168,12,69,1) 100%);
+        }
+        .style-vapor::before { content: ''; position: absolute; top: 40%; left: 0; width: 100%; height: 60px; background: repeating-linear-gradient(90deg, #ff71ce, #ff71ce 2px, transparent 2px, transparent 10px); transform: perspective(200px) rotateX(40deg); z-index: 0; opacity: 0.5; }
+        .style-vapor .p-inner { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; align-items: center; }
+        .style-vapor .p-meme { background: #01cdfe; color: #000; font-size: 12px; padding: 2px 8px; transform: rotate(-2deg); margin-bottom: 20px; font-weight: bold; }
+        .style-vapor .p-text { font-size: 18px; text-align: center; line-height: 1.6; margin-bottom: 20px; font-weight: bold; text-shadow: 2px 2px 0 #fffb96; }
+        .style-vapor .p-img-box { width: 100%; height: 140px; object-fit: cover; filter: contrast(1.2) saturate(1.5); border: 4px solid #fff; box-shadow: 5px 5px 0 #fffb96; }
+        .style-vapor .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-vapor .p-footer { margin-top: 30px; font-size: 10px; opacity: 0.8; letter-spacing: 1px; }
+
+        /* --- 风格 8: 毛玻璃 (优化版) --- */
+        .style-glass {
+            /* 鲜艳的极光渐变背景 */
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            color: #333; font-family: 'Noto Sans SC', sans-serif; padding: 20px;
+        }
+        .style-glass::before { 
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%; 
+            /* 模拟环境光晕 */
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+            z-index: 0; 
+        }
+        .style-glass .p-inner { 
+            position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; 
+            border: 1px solid rgba(255,255,255,0.6); padding: 30px; border-radius: 24px;
+            /* 核心玻璃质感：高亮半透明白色 + 阴影 */
+            background: rgba(255, 255, 255, 0.45); 
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            backdrop-filter: blur(12px); /* 浏览器原生模糊，截图可能丢失，靠opacity兜底 */
+        }
+        .style-glass .p-meme { font-size: 12px; letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; display: inline-block; color: #555; font-weight: 700; }
+        .style-glass .p-text { font-size: 20px; line-height: 1.6; margin-bottom: 20px; font-weight: 600; color: #222; }
+        .style-glass .p-img-box { width: 100%; height: 160px; object-fit: cover; margin-bottom: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.8); }
+        .style-glass .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-glass .p-footer { margin-top: auto; font-size: 10px; text-align: right; opacity: 0.7; color: #444; }
+
+        /* --- 风格 9: 工业风 --- */
+        .style-indus {
+            background: #f0f0f0; color: #333;
+            font-family: 'Noto Sans SC', sans-serif; padding: 0;
+            border: 2px solid #000;
+            position: relative;
+        }
+        .style-indus::before {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:15px;
+            background: repeating-linear-gradient(45deg, #f4d03f, #f4d03f 10px, #000 10px, #000 20px);
+            z-index: 10;
+        }
+        .style-indus .p-inner { padding: 30px 20px; height: 100%; display: flex; flex-direction: column; position: relative; top: 15px; }
+        .style-indus .p-stamp {
+            border: 3px solid #e74c3c; color: #e74c3c; font-weight: 900; font-size: 20px;
+            padding: 5px 10px; text-transform: uppercase; transform: rotate(-15deg);
+            display: inline-block; margin-bottom: 20px; align-self: flex-start; opacity: 0.8;
+        }
+        .style-indus .p-text { font-size: 18px; line-height: 1.5; font-weight: bold; border-left: 5px solid #000; padding-left: 15px; flex: 1; }
+        .style-indus .p-img-box { width: 100%; height: 160px; border: 2px solid #000; margin-top: 20px; filter: grayscale(0.5) contrast(1.2); }
+        .style-indus .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-indus .p-footer { font-family: monospace; font-size: 12px; border-top: 2px dashed #999; padding-top: 10px; margin-top: auto; display: flex; justify-content: space-between; }
+
+        /* --- 风格 10: 便利贴 --- */
+        .style-memo {
+            background: #fcf876; color: #333;
+            font-family: 'Ma Shan Zheng', cursive; padding: 40px 30px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            transform: rotate(-1deg);
+        }
+        .style-memo .p-top-tape {
+            width: 100px; height: 30px; background: rgba(255,255,255,0.4);
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .style-memo .p-meme { font-size: 14px; opacity: 0.7; margin-bottom: 20px; border-bottom: 1px dashed #333; display: inline-block; padding-bottom: 5px;}
+        .style-memo .p-text { font-size: 24px; line-height: 1.6; font-weight: bold; margin-bottom: 30px; }
+        .style-memo .p-img-box { width: 100%; height: 180px; border: 5px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transform: rotate(2deg); margin-bottom: 20px; }
+        .style-memo .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-memo .p-footer { text-align: right; font-family: sans-serif; font-size: 12px; font-style: italic; opacity: 0.6; }
+
+        /* --- 风格 11: 霓虹虹 --- */
+        .style-neon {
+            background: #111; color: #fff;
+            font-family: 'Noto Sans SC', sans-serif; padding: 30px;
+            border: 4px solid #0ff; box-shadow: 0 0 20px #0ff, inset 0 0 20px #0ff;
+            text-align: center;
+        }
+        .style-neon .p-title {
+            font-size: 12px; letter-spacing: 4px; color: #f0f; text-shadow: 0 0 5px #f0f;
+            margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 10px;
+        }
+        .style-neon .p-text { 
+            font-size: 22px; line-height: 1.5; font-weight: 900; 
+            color: #fff; text-shadow: 3px 3px 0 #f0f, -2px -2px 0 #0ff; margin-bottom: 30px;
+        }
+        .style-neon .p-img-box { width: 100%; height: 160px; border-radius: 50%; border: 3px solid #f0f; overflow: hidden; margin: 0 auto 20px auto; width: 160px; }
+        .style-neon .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-neon .p-footer { font-family: monospace; font-size: 10px; color: #0ff; letter-spacing: 2px; }
+
+        /* --- 风格 12: 便当盒 --- */
+        .style-bento {
+            background: #f5f5f7; color: #000;
+            font-family: 'Noto Sans SC', sans-serif; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .style-bento .p-header-box {
+            background: #000; color: #fff; padding: 15px; border-radius: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .style-bento .p-date { font-size: 12px; opacity: 0.8; }
+        .style-bento .p-meme { font-weight: bold; font-size: 14px; background: #fff; color: #000; padding: 2px 8px; border-radius: 4px;}
+        .style-bento .p-text-box {
+            background: #fff; padding: 20px; border-radius: 16px;
+            font-size: 18px; font-weight: bold; line-height: 1.4; flex: 1;
+            display: flex; align-items: center;
+        }
+        .style-bento .p-img-box { width: 100%; height: 140px; background: #e0e0e0; border-radius: 16px; overflow: hidden; }
+        .style-bento .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-bento .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .style-bento .p-stat { background: #ff3b30; color: #fff; border-radius: 16px; padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .style-bento .p-stat span { font-size: 24px; font-weight: 900; }
+        .style-bento .p-stat small { font-size: 10px; opacity: 0.9; }
+
+        /* --- 风格 13: 文字排印 (瑞士风格 - 优化版) --- */
+        .style-typo {
+            background: #fff; color: #000;
+            font-family: 'Noto Sans SC', sans-serif; font-weight: 900;
+            padding: 40px; display: grid; grid-template-rows: auto 1fr auto; height: 100%; gap: 20px;
+        }
+        .style-typo .p-header {
+            border-bottom: 4px solid #000; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: baseline;
+        }
+        .style-typo .p-big-num { font-size: 64px; line-height: 0.8; letter-spacing: -2px; color: #e0e0e0; user-select: none;}
+        .style-typo .p-meme { font-size: 14px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase;}
+        
+        .style-typo .p-content-wrapper { display: flex; align-items: center; }
+        .style-typo .p-text { 
+            font-size: 32px; line-height: 1.2; font-weight: 900; text-transform: uppercase;
+            word-break: break-word;
+        }
+        .style-typo .p-text span { color: #ccc; } /* 装饰性弱化文字 */
+        
+        .style-typo .p-footer-box { 
+            background: #000; color: #fff; padding: 15px; display: flex; justify-content: space-between; font-weight: 400; font-size: 12px;
+        }
+        .style-typo .p-img-box { display: none; /* 简约风格通常不喧宾夺主，或仅作小缩略图 */ }
+        .style-typo.p-has-img .p-img-box {
+            display: block; width: 100px; height: 100px; background: #000; float: right; margin-left: 20px; object-fit: cover; margin-bottom: 10px;
+        }
+
+        /* --- 风格 14: 自然系 --- */
+        .style-nature {
+            background: #fdfbf7; color: #4a5d23;
+            font-family: 'Noto Serif SC', serif; padding: 30px;
+            border: 8px solid #fff; outline: 1px solid #e0e0e0;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .style-nature .p-top-deco {
+            width: 40px; height: 40px; border-radius: 50%; background: #e8f5e9;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .style-nature .p-text { font-size: 18px; line-height: 1.8; margin-bottom: 20px; font-style: italic; }
+        .style-nature .p-img-box { width: 100%; height: 180px; border-radius: 100px 100px 0 0; overflow: hidden; margin-bottom: 20px; border: 2px solid #e8f5e9; }
+        .style-nature .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-nature .p-footer { text-align: center; font-size: 12px; letter-spacing: 1px; border-top: 1px dashed #ccc; padding-top: 15px; }
+
+        /* --- 新增风格 15: 暗夜电影 --- */
+        .style-cinema {
+            background: #0a0a0a; color: #fff;
+            font-family: 'Noto Sans SC', sans-serif; padding: 0;
+            position: relative; overflow: hidden;
+        }
+        .style-cinema::after {
+            content: ''; position: absolute; top:0; left:0; right:0; bottom:0;
+            background: radial-gradient(circle, transparent 50%, #000 150%);
+            z-index: 1; pointer-events: none;
+        }
+        .style-cinema .p-inner { position: relative; z-index: 2; padding: 40px 30px; height: 100%; display: flex; flex-direction: column; border: 1px solid #333; }
+        .style-cinema .p-badge {
+            border: 1px solid #fff; color: #fff; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;
+            margin: 0 auto 30px auto; text-align: center; line-height: 1.2;
+        }
+        .style-cinema .p-text {
+            font-size: 28px; font-weight: 700; line-height: 1.3; text-align: center; margin-bottom: 30px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .style-cinema .p-img-box { width: 100%; height: 140px; filter: grayscale(0.8) sepia(0.2) contrast(1.2); margin-bottom: auto; border: 1px solid #333; }
+        .style-cinema .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-cinema .p-credits {
+            font-family: monospace; font-size: 8px; line-height: 1.6; color: #666; text-align: center; opacity: 0.7;
+            margin-top: 20px; text-transform: uppercase;
+        }
+
+        /* --- 新增风格 16: 拍立得 --- */
+        .style-polaroid {
+            background: #fff; color: #333;
+            font-family: 'Permanent Marker', cursive; padding: 20px 20px 40px 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .style-polaroid .p-img-box {
+            width: 100%; height: 200px; background: #000; margin-bottom: 20px;
+            filter: contrast(1.1) saturate(0.9);
+        }
+        .style-polaroid .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-polaroid .p-text {
+            font-size: 24px; text-align: center; transform: rotate(-1deg); line-height: 1.2; margin-bottom: 10px;
+        }
+        .style-polaroid .p-footer {
+            width: 100%; text-align: right; font-family: 'Noto Sans SC', sans-serif; font-size: 14px; color: #999; transform: rotate(2deg);
+        }
+
+        /* --- 新增风格 17: 极简线条 --- */
+        .style-artline {
+            background: #fff; color: #000;
+            font-family: 'Noto Serif SC', serif; padding: 60px 40px;
+            border: 1px solid #eee; height: 100%; display: flex; flex-direction: column;
+        }
+        .style-artline::before {
+            content: ''; position: absolute; top: 30px; left: 30px; width: 50px; height: 50px;
+            border-left: 1px solid #000; border-top: 1px solid #000;
+        }
+        .style-artline::after {
+            content: ''; position: absolute; bottom: 30px; right: 30px; width: 50px; height: 50px;
+            border-right: 1px solid #000; border-bottom: 1px solid #000;
+        }
+        .style-artline .p-text {
+            font-size: 32px; line-height: 1.5; font-weight: 300; font-style: italic; margin: auto 0; position: relative;
+            padding: 0 20px;
+        }
+        .style-artline .p-text::before { content: '“'; position: absolute; top: -20px; left: -20px; font-size: 60px; color: #f5f5f5; z-index: -1; font-family: serif; }
+        .style-artline .p-img-box { width: 100%; height: 120px; margin-bottom: 20px; filter: grayscale(1); opacity: 0.8; }
+        .style-artline .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-artline .p-footer { text-align: center; font-size: 10px; letter-spacing: 3px; margin-top: 20px; text-transform: uppercase; border-top: 1px solid #000; padding-top: 15px; }
+
+        /* --- 新增风格 18: 美式漫画 --- */
+        .style-comic {
+            background: #fff; color: #000;
+            font-family: 'Bangers', cursive, 'Noto Sans SC'; padding: 20px;
+            border: 3px solid #000; box-shadow: 5px 5px 0 #000;
+        }
+        .style-comic::before {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background-image: radial-gradient(#000 15%, transparent 16%); background-size: 8px 8px; opacity: 0.05; z-index: 0;
+        }
+        .style-comic .p-inner { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+        .style-comic .p-bang {
+            background: #ffeb3b; color: #000; font-size: 24px; font-weight: 900;
+            display: inline-block; padding: 5px 15px; transform: rotate(-10deg);
+            border: 2px solid #000; box-shadow: 2px 2px 0 #000; margin-bottom: 20px;
+        }
+        .style-comic .p-text {
+            font-size: 22px; line-height: 1.3; font-weight: 900; text-transform: uppercase; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff; margin-bottom: 20px;
+        }
+        .style-comic .p-img-box { width: 100%; height: 180px; border: 3px solid #000; margin-bottom: 20px; }
+        .style-comic .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-comic .p-footer { background: #000; color: #fff; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; transform: skew(-10deg); }
+
+        /* --- 新增风格 19: 黑金唱片 --- */
+        .style-record {
+            background: #000; color: #d4af37;
+            font-family: 'Playfair Display', serif; padding: 40px;
+            border: 1px solid #333;
+        }
+        .style-record::before {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 200px; height: 200px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 50%; z-index: 0;
+        }
+        .style-record .p-inner { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .style-record .p-title { font-size: 12px; letter-spacing: 4px; margin-bottom: 40px; opacity: 0.7; }
+        .style-record .p-text { font-size: 26px; font-weight: 400; font-style: italic; margin-bottom: 40px; line-height: 1.4; }
+        .style-record .p-img-box { width: 120px; height: 120px; border-radius: 50%; border: 2px solid #d4af37; margin-bottom: auto; padding: 5px; }
+        .style-record .p-img-box img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; filter: grayscale(1); }
+        .style-record .p-footer { font-size: 10px; letter-spacing: 2px; border-top: 1px solid #333; padding-top: 20px; width: 100%; color: #666; }
+
+        /* --- 新增风格 20: 赛博故障 (Cyberpunk Glitch) --- */
+        .style-glitch {
+            background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 30px;
+            position: relative; overflow: hidden;
+        }
+        .style-glitch::before {
+            content: 'ERROR_404'; position: absolute; top: 10px; left: 10px; font-size: 10px; color: #f00; opacity: 0.5;
+        }
+        .style-glitch .p-text {
+            font-size: 24px; font-weight: bold; line-height: 1.2; text-transform: uppercase;
+            text-shadow: 2px 0 #f0f, -2px 0 #0ff; margin-bottom: 30px; position: relative; animation: glitch-anim 2s infinite;
+        }
+        @keyframes glitch-anim {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .style-glitch .p-img-box { width: 100%; height: 150px; border: 2px solid #0f0; filter: hue-rotate(90deg) contrast(1.5); margin-bottom: 30px; position: relative; }
+        .style-glitch .p-img-box::after {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.2) 50%); background-size: 100% 4px; pointer-events: none;
+        }
+        .style-glitch .p-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .style-glitch .p-footer { display: flex; justify-content: space-between; border-top: 1px solid #333; padding-top: 10px; font-size: 10px; color: #0ff; }
+
+        footer {
+            position: fixed; bottom: 0; width: 100%; background: #fff; padding: 10px;
+            text-align: center; font-size: 10px; color: #ccc; border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>点滴成就</h1>
+        <div class="subtitle">Life Achievements Pin</div>
+    </header>
+
+    <div class="input-section">
+        <div class="input-wrapper">
+            <textarea id="input" placeholder="记录当下的成就或想法...&#10;例如：坚持早起第100天"></textarea>
+            <div class="upload-bar">
+                <div class="upload-btn" onclick="document.getElementById('file-input').click()">
+                    <span>📷 添加图片</span>
+                </div>
+                <img id="preview-img" class="img-preview" alt="预览">
+                <input type="file" id="file-input" accept="image/*" onchange="handleImageSelect(this)">
+            </div>
+        </div>
+        <button class="btn-generate" onclick="createNewAchievement()">✨ 生成并钉上墙</button>
+    </div>
+
+    <div class="wall-container">
+        <div class="wall-title">
+            <span>我的成就墙 (点击查看海报)</span>
+            <span class="clear-btn" onclick="clearAllData()">清空</span>
+        </div>
+        <div id="wall">
+            <!-- 动态插入 -->
+        </div>
+    </div>
+
+    <!-- 海报编辑/预览模态框 -->
+    <div id="modal">
+        <div class="modal-content">
+            
+            <!-- 风格切换 -->
+            <div class="controls">
+                <div style="color:#fff; font-size:12px; margin-bottom:8px;">选择主题风格 (滑动查看更多)</div>
+                <div class="style-switcher">
+                    <div class="style-btn active" onclick="setStyle('style-zen', this)">禅意</div>
+                    <div class="style-btn" onclick="setStyle('style-mag', this)">杂志</div>
+                    <div class="style-btn" onclick="setStyle('style-retro', this)">复古</div>
+                    <div class="style-btn" onclick="setStyle('style-cyber', this)">赛博</div>
+                    <div class="style-btn" onclick="setStyle('style-luxury', this)">奢华</div>
+                    <div class="style-btn" onclick="setStyle('style-fresh', this)">清新</div>
+                    <div class="style-btn" onclick="setStyle('style-vapor', this)">蒸汽波</div>
+                    <div class="style-btn" onclick="setStyle('style-glass', this)">毛玻璃</div>
+                    <div class="style-btn" onclick="setStyle('style-indus', this)">工业</div>
+                    <div class="style-btn" onclick="setStyle('style-memo', this)">便利贴</div>
+                    <div class="style-btn" onclick="setStyle('style-neon', this)">霓虹</div>
+                    <div class="style-btn" onclick="setStyle('style-bento', this)">便当盒</div>
+                    <div class="style-btn" onclick="setStyle('style-typo', this)">瑞士风</div>
+                    <div class="style-btn" onclick="setStyle('style-nature', this)">自然系</div>
+                    <div class="style-btn" onclick="setStyle('style-cinema', this)">暗夜电影</div>
+                    <div class="style-btn" onclick="setStyle('style-polaroid', this)">拍立得</div>
+                    <div class="style-btn" onclick="setStyle('style-artline', this)">极简线条</div>
+                    <div class="style-btn" onclick="setStyle('style-comic', this)">美漫</div>
+                    <div class="style-btn" onclick="setStyle('style-record', this)">黑金唱片</div>
+                    <div class="style-btn" onclick="setStyle('style-glitch', this)">故障风</div>
+                </div>
+
+                <!-- 海报画布 -->
+                <div id="poster-canvas" class="style-zen">
+                    <!-- 内容由JS动态填充 -->
+                </div>
+
+                <div class="action-row">
+                    <button class="btn-cancel" onclick="closeModal()">取消</button>
+                    <button class="btn-save" id="save-btn" onclick="handleSaveOrShare()">保存并钉上</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>创作者: 吴任杰 | 微信: WRJ2008419 | 邮箱: wurenjie577@gmail.com</p>
+    </footer>
+
+    <script>
+        // --- 1. 数据与状态管理 ---
+        const STORAGE_KEY = 'life_achievements_data_v2';
+        let achievements = [];
+        let currentImageBase64 = null;
+        let currentStyleClass = 'style-zen';
+        let activeId = null;
+
+        const aiMemes = [
+            "拒绝精神内耗，该吃吃该喝喝。",
+            "与其向往，不如成为。",
+            "普通玩家选择困难模式，而我选择通关。",
+            "生活不仅要吃甜头，还要吃苦头。",
+            "虽然进度慢，但我从未后退。",
+            "今日份的开心已到账。",
+            "做个俗人，贪财好色，一世风光。",
+            "在这个快餐时代，我想慢慢来。",
+            "所谓无底深渊，下去，也是前程万里。",
+            "万物皆有裂痕，那是光照进来的地方。",
+            "努力是为了有底气拒绝，不是为了证明给谁看。",
+            "间歇性踌躇满志，持续性热爱生活。",
+            "保持热爱，奔赴山海。",
+            "乾坤未定，你我皆是黑马。",
+            "好运正在派送中...",
+            "生活原本沉闷，但跑起来就有风。"
+        ];
+
+        window.onload = function() {
+            loadData();
+            renderWall();
+        };
+
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try { achievements = JSON.parse(stored); } catch(e) { achievements = []; }
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(achievements));
+        }
+
+        function clearAllData() {
+            if(confirm('确定要清空所有成就吗？')) {
+                achievements = [];
+                saveData();
+                renderWall();
+            }
+        }
+
+        function handleImageSelect(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageBase64 = e.target.result;
+                    const img = document.getElementById('preview-img');
+                    img.src = currentImageBase64;
+                    img.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function createNewAchievement() {
+            const val = document.getElementById('input').value.trim();
+            if(!val && !currentImageBase64) return alert("请至少输入文字或上传一张图片");
+            activeId = null;
+            document.getElementById('save-btn').innerText = "保存并钉上";
+            document.getElementById('modal').style.display = 'flex';
+            renderPosterContent(val);
+        }
+
+        function viewAchievement(id) {
+            const item = achievements.find(x => x.id === id);
+            if(!item) return;
+            activeId = id;
+            currentStyleClass = item.style;
+            currentImageBase64 = item.image;
+            document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = Array.from(document.querySelectorAll('.style-btn')).find(b => b.getAttribute('onclick').includes(item.style));
+            if(activeBtn) activeBtn.classList.add('active');
+            document.getElementById('save-btn').innerText = "保存 / 分享";
+            document.getElementById('modal').style.display = 'flex';
+            renderPosterContent(item.text);
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            if(activeId === null) {
+                document.getElementById('input').value = "";
+                document.getElementById('preview-img').style.display = 'none';
+                currentImageBase64 = null;
+            }
+        }
+
+        function setStyle(styleClass, btn) {
+            currentStyleClass = styleClass;
+            document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const poster = document.getElementById('poster-canvas');
+            poster.className = ''; 
+            poster.classList.add(styleClass);
+            const text = activeId === null ? document.getElementById('input').value.trim() : achievements.find(x=>x.id===activeId).text;
+            renderPosterContent(text);
+        }
+
+        function renderPosterContent(text) {
+            const container = document.getElementById('poster-canvas');
+            const dateStr = new Date().toLocaleDateString();
+            const randomMeme = aiMemes[Math.floor(Math.random() * aiMemes.length)];
+            const randomId = "NO." + Math.floor(1000 + Math.random() * 9000);
+            const imgHtml = currentImageBase64 ? `<img src="${currentImageBase64}" crossorigin="anonymous">` : '';
+
+            if(currentStyleClass === 'style-zen') {
+                container.innerHTML = `<div class="p-circle">钉</div><div class="p-meme">${randomMeme}</div><div class="p-text">${text || "..."}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer"><span>${dateStr}</span><span>点滴成就</span></div>`;
+            } else if (currentStyleClass === 'style-mag') {
+                container.innerHTML = `<div class="p-bg-text">ACHIEVEMENT</div><div class="p-inner"><div class="p-header"><span class="p-big-num">${randomId.split('.')[1]}</span><span class="p-label">LIFE RECORD</span></div><div class="p-meme">"${randomMeme}"</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-text">${text || "IMAGE RECORD"}</div><div class="p-bar"></div></div>`;
+            } else if (currentStyleClass === 'style-retro') {
+                container.innerHTML = `<div class="p-title"><h2>每日通报</h2><span>DAILY NEWS - ${dateStr}</span></div><div class="p-meme">【${randomMeme}】</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer"><span>编辑: 人生体验家</span><span>第 ${Math.floor(Math.random()*50)+1} 期</span></div>`;
+            } else if (currentStyleClass === 'style-cyber') {
+                container.innerHTML = `<div class="p-inner"><div class="p-head"><span>SYSTEM_ACCESS_GRANTED</span><span>${dateStr}</span></div><div class="p-meme">> ${randomMeme}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-text">${text}</div><div class="p-footer"><span>ID: ${randomId}</span><span>STATUS: COMPLETED</span></div></div>`;
+            } else if (currentStyleClass === 'style-luxury') {
+                container.innerHTML = `<div class="p-meme">${randomMeme}</div><div class="p-text">"${text || "..."}"</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">${dateStr} | ROYAL MEMBER</div>`;
+            } else if (currentStyleClass === 'style-fresh') {
+                container.innerHTML = `<div class="p-card"><div class="p-meme"># DAILY ACHIEVEMENT</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-text">${text}</div><div class="p-footer">${dateStr}</div></div>`;
+            } else if (currentStyleClass === 'style-vapor') {
+                container.innerHTML = `<div class="p-inner"><div class="p-meme">VAPORWAVE ${dateStr}</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">A E S T H E T I C</div></div>`;
+            } else if (currentStyleClass === 'style-glass') {
+                container.innerHTML = `<div class="p-inner"><div class="p-meme">MOMENT IN TIME</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">${dateStr}</div></div>`;
+            } else if (currentStyleClass === 'style-indus') {
+                container.innerHTML = `<div class="p-inner"><div class="p-stamp">PASSED</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer"><span>INSPECTOR: LIFE</span><span>${randomId}</span></div></div>`;
+            } else if (currentStyleClass === 'style-memo') {
+                container.innerHTML = `<div class="p-top-tape"></div><div class="p-meme">To Do: Done!</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">Don't forget to smile.</div>`;
+            } else if (currentStyleClass === 'style-neon') {
+                container.innerHTML = `<div class="p-title">NIGHT CITY</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">${dateStr} / SYSTEM READY</div>`;
+            } else if (currentStyleClass === 'style-bento') {
+                container.innerHTML = `<div class="p-header-box"><span class="p-date">${dateStr}</span><span class="p-meme">${randomMeme}</span></div><div class="p-text-box">${text}</div><div class="p-grid"><div class="p-stat"><span>100%</span><small>COMPLETED</small></div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>` : '<div class="p-stat" style="background:#ccc"><span>IMG</span><small>EMPTY</small></div>'}</div>`;
+            } else if (currentStyleClass === 'style-typo') {
+                const shortText = text.substring(0, 15) + (text.length > 15 ? '...' : '');
+                container.className = currentStyleClass + (currentImageBase64 ? ' p-has-img' : '');
+                container.innerHTML = `
+                    <div class="p-header"><span class="p-big-num">${randomId.split('.')[1]}</span><span class="p-meme">SWISS DESIGN</span></div>
+                    <div class="p-content-wrapper">
+                        ${currentImageBase64 ? `<div class="p-img-box">${imgHtml}</div>` : ''}
+                        <div class="p-text">${text || 'DESIGN IS INTELLIGENCE MADE VISIBLE'}</div>
+                    </div>
+                    <div class="p-footer-box"><span>${dateStr}</span><span>${randomMeme}</span></div>`;
+            } else if (currentStyleClass === 'style-nature') {
+                container.innerHTML = `<div class="p-top-deco">🌿</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">KEEP GROWING • ${dateStr}</div>`;
+            } else if (currentStyleClass === 'style-cinema') {
+                container.innerHTML = `<div class="p-inner"><div class="p-badge">WONDER<br>DAY</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-credits">DIRECTED BY YOU<br>${dateStr}<br>${randomMeme.toUpperCase()}</div></div>`;
+            } else if (currentStyleClass === 'style-polaroid') {
+                container.innerHTML = `${imgHtml ? `<div class="p-img-box">${imgHtml}</div>` : ''}<div class="p-text">${text}</div><div class="p-footer">${dateStr}</div>`;
+            } else if (currentStyleClass === 'style-artline') {
+                container.innerHTML = `${imgHtml ? `<div class="p-img-box">${imgHtml}</div>` : ''}<div class="p-text">${text}</div><div class="p-footer">SIMPLICITY IS THE ULTIMATE SOPHISTICATION</div>`;
+            } else if (currentStyleClass === 'style-comic') {
+                container.innerHTML = `<div class="p-inner"><div class="p-bang">POW!</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">MISSION ACCOMPLISHED</div></div>`;
+            } else if (currentStyleClass === 'style-record') {
+                container.innerHTML = `<div class="p-inner"><div class="p-title">GOLDEN RECORD</div><div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer">SIDE A • TRACK 1</div></div>`;
+            } else if (currentStyleClass === 'style-glitch') {
+                container.innerHTML = `<div class="p-text">${text}</div>${imgHtml ? `<div class="p-img-box">${imgHtml}</div>`:''}<div class="p-footer"><span>${dateStr}</span><span>SYSTEM_HACKED</span></div>`;
+            }
+        }
+
+        async function handleSaveOrShare() {
+            const element = document.getElementById('poster-canvas');
+            const text = activeId === null ? document.getElementById('input').value.trim() : achievements.find(x=>x.id===activeId).text;
+
+            html2canvas(element, {
+                scale: 3, backgroundColor: null, useCORS: true, logging: false
+            }).then(canvas => {
+                const fileName = `成就海报_${Date.now()}.png`;
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], fileName, { type: "image/png" });
+                    if (activeId !== null) {
+                        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({ title: '我的点滴成就', text: '记录我的高光时刻！', files: [file] });
+                            } catch (shareErr) { downloadCanvas(canvas, fileName); }
+                        } else { downloadCanvas(canvas, fileName); }
+                    } else {
+                        downloadCanvas(canvas, fileName);
+                        pinToWall(text);
+                        closeModal();
+                        document.getElementById('input').value = "";
+                        document.getElementById('preview-img').style.display = 'none';
+                        currentImageBase64 = null;
+                        document.getElementById('file-input').value = "";
+                    }
+                }, 'image/png');
+            }).catch(err => { console.error(err); alert("生成失败，请重试"); });
+        }
+
+        function downloadCanvas(canvas, fileName) {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL();
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function pinToWall(text) {
+            const newItem = {
+                id: Date.now(), text: text || "(纯图片记录)", date: new Date().toLocaleDateString(),
+                image: currentImageBase64, style: currentStyleClass
+            };
+            achievements.unshift(newItem);
+            saveData();
+            renderWall();
+        }
+
+        function deleteItem(id) {
+            if(confirm('确定要移除这条成就吗？')) {
+                achievements = achievements.filter(item => item.id !== id);
+                saveData();
+                renderWall();
+            }
+        }
+
+        function renderWall() {
+            const wall = document.getElementById('wall');
+            wall.innerHTML = "";
+            if(achievements.length === 0) {
+                wall.innerHTML = `<div style="text-align:center; color:#ccc; padding:40px; font-size:14px;">空空如也，快去钉上你的第一个成就吧！</div>`;
+                return;
+            }
+            achievements.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'nail-item';
+                div.onclick = () => viewAchievement(item.id);
+                
+                let accentColor = '#333';
+                if(item.style === 'style-zen') accentColor = '#ff6b6b';
+                if(item.style === 'style-mag') accentColor = '#000';
+                if(item.style === 'style-cyber') accentColor = '#0ff';
+                if(item.style === 'style-indus') accentColor = '#f4d03f';
+                if(item.style === 'style-memo') accentColor = '#fcf876';
+                if(item.style === 'style-bento') accentColor = '#000';
+                if(item.style === 'style-typo') accentColor = '#000';
+                if(item.style === 'style-nature') accentColor = '#4a5d23';
+                if(item.style === 'style-cinema') accentColor = '#fff';
+                if(item.style === 'style-polaroid') accentColor = '#999';
+                if(item.style === 'style-artline') accentColor = '#000';
+                if(item.style === 'style-comic') accentColor = '#ffeb3b';
+                if(item.style === 'style-record') accentColor = '#d4af37';
+                if(item.style === 'style-glitch') accentColor = '#0f0';
+                if(item.style === 'style-glass') accentColor = '#ff9a9e';
+                
+                div.style.borderLeft = `4px solid ${accentColor}`;
+
+                const delBtn = document.createElement('div');
+                delBtn.className = 'del-btn';
+                delBtn.innerHTML = '×';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    e.preventDefault();
+                    deleteItem(item.id);
+                };
+
+                div.innerHTML = `
+                    <div class="nail-tag">${item.date}</div>
+                    <div class="nail-text">${escapeHtml(item.text)}</div>
+                    ${item.image ? `<img src="${item.image}" class="nail-img" loading="lazy">` : ''}
+                `;
+                div.appendChild(delBtn);
+                wall.appendChild(div);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
